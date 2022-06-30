@@ -1,0 +1,4 @@
+/venv/
+/modules/core/migrations/
+.env
+db.sqlite3

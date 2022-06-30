@@ -1,0 +1,151 @@
+from django.db import models
+from django.dispatch import receiver
+from django.db.models.signals import pre_save
+from django.db.models import Q
+import datetime
+
+class rental(models.Model):
+    name = models.CharField(max_length=300, null=False, unique=True)
+    id_previous = None
+
+    def __str__(self):
+        return f'{self.name} , {str(self.id)}'
+
+    def __new__(cls, *args, **kwargs):
+        if 'id' in kwargs:
+            raise Exception('Create object with id was resticted')
+
+        if len(args) > 0:
+            id_previous = args[0]
+        else:
+            id_previous = None
+
+        newOBJ = super(rental, cls).__new__(cls)
+        newOBJ.id_previous = id_previous
+        return newOBJ
+
+    def __init__(self, *args, **kwargs):
+        super(rental, self).__init__(*args, **kwargs)
+        pass
+        # return newINIT
+
+    def save(self, *args, **kwargs):
+        if self.id_previous != None and self.id != self.id_previous:
+            raise Exception('Changing ID forbidden')
+        else:
+            super(rental, self).save(*args, **kwargs)
+        pass
+
+    def createReservation(self, checkin: datetime.date, checkout: datetime.date, **kwargs):
+        if isinstance(checkin, datetime.date) and isinstance(checkout, datetime.date):
+            if checkin < checkout:
+                NewReservation = reservation()
+                NewReservation.rental = self;
+                NewReservation.checkin = checkin
+                NewReservation.checkout = checkout
+                NewReservation.save()
+
+                return NewReservation
+            else:
+                raise Exception("Incorrect date interval. ")
+        else:
+            raise Exception("Incorrect input types date interval. ")
+
+class reservationManager(models.Manager):
+
+    def selectReservationWithLast(self):
+        return self.raw('SELECT gr.id, Max(rp.id) as id_prev FROM core_reservation as gr left join core_reservation as rp on rp.id_rental = gr.id_rental and gr.id > rp.id group by gr.id')
+
+class reservation(models.Model):
+    # -------------------
+    rental = models.ForeignKey(rental, null=False, db_column='id_rental', to_field = 'id', on_delete=models.PROTECT)
+    checkin = models.DateField(null=False)
+    checkout = models.DateField(null=False)
+    # -------------------
+    id_previous = None
+    # -------------------
+    objects = reservationManager()
+
+    def __new__(cls, *args, **kwargs):
+        if 'id' in kwargs:
+            raise Exception('Create object with id was resticted')
+
+        if len(args) > 0:
+            id_previous = args[0]
+        else:
+            id_previous = None
+
+        newOBJ = super(reservation, cls).__new__(cls)
+        newOBJ.id_previous = id_previous
+        return newOBJ
+
+    def __init__(self, *args, **kwargs):
+        super(reservation, self).__init__(*args, **kwargs)
+        pass
+
+
+    def save(self, *args, **kwargs):
+        if self.id_previous != None and self.id != self.id_previous:
+            raise Exception('Changing ID forbidden')
+        else:
+            super(reservation, self).save(*args, **kwargs)
+        pass
+
+    @property
+    def id_previos(self):
+        sample = reservation.objects.filter(rental=self.rental, id__lt=self.id).order_by('-id')[:1]
+        if len(sample) == 0:
+            return None
+        else:
+            return sample[0].id
+
+    def validateIntersection(self):
+        if self._checkIntersectionExistence_root(self.rental, self.checkin, self.checkout, self) == True:
+            return 'Restriction DB error: Intersection Existence for interval ' + str(self.checkin) + ' <-> ' + str(self.checkout)
+        else:
+            return True
+
+    def validateFull(self):
+        ErrorList = []
+
+        resCheck = self.validateIntersection()
+        if resCheck != True:
+            ErrorList.append(resCheck)
+
+        if len(ErrorList) == 0:
+            return True;
+        else:
+            return ErrorList;
+
+    @staticmethod
+    def _checkIntersectionExistence_root(rental: rental, checkin: datetime.date, checkout: datetime.date, exsceptionElement: 'reservation' = None) -> bool:
+
+        selfObject = Q();
+
+        if exsceptionElement != None:
+            selfObject = ~Q(id=exsceptionElement.id)
+
+
+        sample = reservation.objects.filter(
+            (Q(checkin__lte = checkin, checkout__gt = checkin, rental = rental)
+            |Q(checkin__lt=checkout, checkout__gte=checkout, rental = rental)
+            |Q(checkin__gte=checkin, checkout__lte=checkout, rental = rental))
+            &selfObject
+        )
+        if len(sample) == 0:
+            return False
+        else:
+            return True
+
+    @classmethod
+    def checkIntersectionExistence(cls, rental: rental, checkin: datetime.date, checkout: datetime.date) -> bool:
+        return cls._checkIntersectionExistence_root(rental, checkin, checkout)
+
+    def __str__(self):
+        return f'{str(self.id)} {str(self.checkin)} {str(self.checkout)}'
+
+@receiver(pre_save, sender=reservation)
+def create_reservation(sender, instance, *args, **kwargs):
+    validateResult = instance.validateFull()
+    if validateResult != True:
+        raise Exception(f'ERRORS: {str(instance.validateFull())}')

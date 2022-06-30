@@ -1,0 +1,2 @@
+from modules.core.tests.data_factory import StandardDataSets
+StandardDataSets.generateStandardDataSets(True)
