@@ -1,6 +1,8 @@
 from django.test import TestCase
 from django.db import transaction
 from modules.core.models import hospitality as models
+from modules.core.models.hospitality import rental as Rental_Model
+from modules.core.models.hospitality import reservation as Reservation_Model
 from .data_factory import StandardDataSets
 import datetime
 
@@ -198,43 +200,87 @@ class DB_Reservation_01_RightsGeneral(TestCase):
         rentalObjCheck = models.rental.objects.get(id = objForCheck.id)
         self.assertEqual(rentalObjCheck.name, newName, msg=f'Incorrect change field')
 
-    def test_07_01_GeneralRequirement_rental(self):
+    def test_07_01_GeneralRequirementModels_Rental(self):
         # Block id manipulations
 
-        for curTestSet in self.StandardDataSets.standardIntervals:
-            rentalObj = curTestSet['rental']
-
-            idChanged = False
-            rentalObj.id = 100
-            rentalObj.name += ' new index'
-            errorMassage = ''
-            try:
-                rentalObj.save()
-                idChanged = True
-            except Exception as e:
-                errorMassage = str(e)
-
-            self.assertEqual(idChanged, False, msg='Unexpected event on change ID for rental table')
-            self.assertEqual(errorMassage, 'Changing ID forbidden', msg=f'Incorrect exception with error massage: [{errorMassage}]')
-
-    def test_07_02_GeneralRequirement_reservation(self):
-        # Block id manipulations
-        for curTestSet in self.StandardDataSets.standardIntervals:
-            if len(curTestSet['reservations']) == 1:
-                #Test get object by id
-                reservationObj = curTestSet['reservation']
+        def ChangeIDOnExistObject():
+            for curTestSet in self.StandardDataSets.standardIntervals:
+                rentalObj = curTestSet['rental']
 
                 idChanged = False
-                reservationObj.id = 100
+                rentalObj.id = 100
+                rentalObj.name += ' new index'
                 errorMassage = ''
                 try:
-                    reservationObj.save()
+                    rentalObj.save()
                     idChanged = True
                 except Exception as e:
                     errorMassage = str(e)
 
                 self.assertEqual(idChanged, False, msg='Unexpected event on change ID for rental table')
                 self.assertEqual(errorMassage, 'Changing ID forbidden', msg=f'Incorrect exception with error massage: [{errorMassage}]')
+
+        def ChangeIDOnCreatingObjects():
+            objectCreated = False
+            NewRentalObject = Rental_Model(name = 'Critical object')
+
+            NewRentalObject.id = 9223372036854775806
+            try:
+                NewRentalObject.save()
+                objectCreated = True
+            except Exception as e:
+                errorMassage = str(e)
+
+            self.assertEqual(objectCreated, False, msg='Unexpected event on create object with dirrect assigment ID for rental table')
+            self.assertEqual(errorMassage, 'Direct value assignment ID forbidden', msg=f'Incorrect exception with error massage: [{errorMassage}]')
+
+
+        ChangeIDOnExistObject()
+        ChangeIDOnCreatingObjects()
+
+    def test_07_02_GeneralRequirement_Reservation(self):
+        # Blocking id manipulations
+
+        def ChangeIDOnExistObject():
+            for curTestSet in self.StandardDataSets.standardIntervals:
+                if len(curTestSet['reservations']) == 1:
+                    #Test get object by id
+                    reservationObj = curTestSet['reservation']
+
+                    idChanged = False
+                    reservationObj.id = 100
+                    errorMassage = ''
+                    try:
+                        reservationObj.save()
+                        idChanged = True
+                    except Exception as e:
+                        errorMassage = str(e)
+
+                    self.assertEqual(idChanged, False, msg='Unexpected event on change ID for rental table')
+                    self.assertEqual(errorMassage, 'Changing ID forbidden', msg=f'Incorrect exception with error massage: [{errorMassage}]')
+
+        def ChangeIDOnCreatingObjects():
+            for curRentalSet in self.StandardDataSets.standardIntervalsFaithful:
+                rentalObj = Rental_Model.objects.get(**curRentalSet['objectDATA'])
+
+                for curReservationSet in curRentalSet['reservations']:
+                    objectCreated = False;
+                    NewReservationObject = Reservation_Model(rental = rentalObj, **curReservationSet)
+
+                    NewReservationObject.id = 9223372036854775806
+
+                    try:
+                        NewReservationObject.save()
+                        ObjectCreated = True
+                    except Exception as e:
+                        errorMassage = str(e)
+
+                    self.assertEqual(objectCreated, False, msg='Unexpected event on create object with dirrect assigment ID for rental table')
+                    self.assertEqual(errorMassage, 'Direct value assignment ID forbidden', msg=f'Incorrect exception with error massage: [{errorMassage}]')
+
+        ChangeIDOnExistObject()
+        ChangeIDOnCreatingObjects()
+
 
 class DB_Reservation_02_Restrictions(TestCase):
 
@@ -310,7 +356,6 @@ class DB_Reservation_02_Restrictions(TestCase):
     def test_02_IntersectionRestrictionsOnChangeInterval_Faithful(self):
         rentalOBJ = models.rental.objects.get(**self.StandardDataSets.standardIntervalsFaithful[0]['objectDATA'])
         reservOBJ = models.reservation.objects.create(rental = rentalOBJ,checkin = datetime.date(2020,1,1), checkout = datetime.date(2020,1,2))
-
 
         for IntersectedInterval in self.StandardDataSets.standardIntervalsFaithful[0]['reservations']:
             ObjectCreated = False

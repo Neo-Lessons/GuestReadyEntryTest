@@ -6,7 +6,8 @@ import datetime
 
 class rental(models.Model):
     name = models.CharField(max_length=300, null=False, unique=True)
-    id_previous = None
+    #--------------------
+    _original_id = None
 
     def __str__(self):
         return f'{self.name} , {str(self.id)}'
@@ -16,12 +17,12 @@ class rental(models.Model):
             raise Exception('Create object with id was resticted')
 
         if len(args) > 0:
-            id_previous = args[0]
+            original_id = args[0]
         else:
-            id_previous = None
+            original_id = None
 
         newOBJ = super(rental, cls).__new__(cls)
-        newOBJ.id_previous = id_previous
+        newOBJ._original_id = original_id
         return newOBJ
 
     def __init__(self, *args, **kwargs):
@@ -30,10 +31,14 @@ class rental(models.Model):
         # return newINIT
 
     def save(self, *args, **kwargs):
-        if self.id_previous != None and self.id != self.id_previous:
+        if self._original_id != None and self.id != self._original_id:
             raise Exception('Changing ID forbidden')
         else:
-            super(rental, self).save(*args, **kwargs)
+            if self._original_id == None and self.id != None:
+                raise Exception('Direct value assignment ID forbidden')
+            else:
+                super(rental, self).save(*args, **kwargs)
+                self._original_id = self.id
         pass
 
     def createReservation(self, checkin: datetime.date, checkout: datetime.date, **kwargs):
@@ -62,7 +67,7 @@ class reservation(models.Model):
     checkin = models.DateField(null=False)
     checkout = models.DateField(null=False)
     # -------------------
-    id_previous = None
+    _original_id = None
     # -------------------
     objects = reservationManager()
 
@@ -71,12 +76,12 @@ class reservation(models.Model):
             raise Exception('Create object with id was resticted')
 
         if len(args) > 0:
-            id_previous = args[0]
+            original_id = args[0]
         else:
-            id_previous = None
+            original_id = None
 
         newOBJ = super(reservation, cls).__new__(cls)
-        newOBJ.id_previous = id_previous
+        newOBJ._original_id = original_id
         return newOBJ
 
     def __init__(self, *args, **kwargs):
@@ -85,10 +90,14 @@ class reservation(models.Model):
 
 
     def save(self, *args, **kwargs):
-        if self.id_previous != None and self.id != self.id_previous:
+        if self._original_id != None and self.id != self._original_id:
             raise Exception('Changing ID forbidden')
         else:
-            super(reservation, self).save(*args, **kwargs)
+            if self._original_id == None and self.id != None:
+                raise Exception('Direct value assignment ID forbidden')
+            else:
+                super(reservation, self).save(*args, **kwargs)
+                self._original_id = self.id
         pass
 
     @property
