@@ -1,4 +1,5 @@
 /venv/
 /modules/core/migrations/
+/.idea/
 .env
 db.sqlite3
