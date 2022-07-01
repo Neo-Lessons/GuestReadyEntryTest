@@ -100,13 +100,13 @@ class reservation(models.Model):
                 self._original_id = self.id
         pass
 
-    @property
-    def id_previos(self):
-        sample = reservation.objects.filter(rental=self.rental, id__lt=self.id).order_by('-id')[:1]
-        if len(sample) == 0:
-            return None
-        else:
-            return sample[0].id
+    # @property
+    # def id_previos(self):
+    #     sample = reservation.objects.filter(rental=self.rental, id__lt=self.id).order_by('-id')[:1]
+    #     if len(sample) == 0:
+    #         return None
+    #     else:
+    #         return sample[0].id
 
     def validateIntersection(self):
         if self._checkIntersectionExistence_root(self.rental, self.checkin, self.checkout, self) == True:

@@ -425,51 +425,51 @@ class DB_Reservation_02_Restrictions(TestCase):
 
             self.assertEqual(ObjectCreated, False, msg='Unexpected transfer intersected reservation.')
 
-class DB_Reservation_03_Dependecys(TestCase):
-    # Requirements
-    #   correct creation objects
-
-    def setUp(self):
-        self.StandardDataSets = StandardDataSets()
-        self.StandardDataSets.generateStandardDataSets()
-
-    def test_ConsistentlyID(self):
-        # Requirement: Sequential numbering of elements is used for the mechanism of determining the previous reservation
-        #   Addictions:
-        #       models.hospitality.reservation.id_previos
-        #       models.hospitality.reservation.objects.selectReservationWithLast
-
-        def CheckSequentialNumeration():
-            lastID = None
-            i = 1
-            for reservData in StandardDataSets.standardIntervalsFaithful[0]['reservations']:
-                rentalOBJ = models.rental.objects.filter(name=StandardDataSets.standardIntervalsFaithful[0]['objectDATA']['name']).first()
-
-                newReservation = models.reservation.objects.create(rental = rentalOBJ, **reservData)
-                if i > 1:
-                    self.assertEqual(newReservation.id, lastID+1, msg='Violation sequential numbering')
-                i += 1
-                lastID = newReservation.id
-
-        def CheckJumpNumerationRestriction():
-            rentalOBJ = models.rental.objects.filter(name = StandardDataSets.standardIntervalsFaithful[1]['objectDATA']['name']).first()
-
-            objectCreated = False
-
-            try:
-                newID1 = 100
-                newReservation1 = models.reservation.objects.create(id = newID1, rental = rentalOBJ, **StandardDataSets.standardIntervalsFaithful[1]['reservations'][0])
-                newID2 = 50
-                newReservation2 = models.reservation.objects.create(id = newID2, rental = rentalOBJ, **StandardDataSets.standardIntervalsFaithful[1]['reservations'][1])
-                objectCreated = True
-            except Exception as e:
-                pass
-
-            self.assertEqual(objectCreated, False, msg='Violation sequential numbering')
-
-
-        CheckSequentialNumeration()
-        CheckJumpNumerationRestriction()
+# class DB_Reservation_03_Dependecys(TestCase):
+#     # Requirements
+#     #   correct creation objects
+#
+#     def setUp(self):
+#         self.StandardDataSets = StandardDataSets()
+#         self.StandardDataSets.generateStandardDataSets()
+#
+#     def test_ConsistentlyID(self):
+#         # Requirement: Sequential numbering of elements is used for the mechanism of determining the previous reservation
+#         #   Addictions:
+#         #       models.hospitality.reservation.id_previos
+#         #       models.hospitality.reservation.objects.selectReservationWithLast
+#
+#         def CheckSequentialNumeration():
+#             lastID = None
+#             i = 1
+#             for reservData in StandardDataSets.standardIntervalsFaithful[0]['reservations']:
+#                 rentalOBJ = models.rental.objects.filter(name=StandardDataSets.standardIntervalsFaithful[0]['objectDATA']['name']).first()
+#
+#                 newReservation = models.reservation.objects.create(rental = rentalOBJ, **reservData)
+#                 if i > 1:
+#                     self.assertEqual(newReservation.id, lastID+1, msg='Violation sequential numbering')
+#                 i += 1
+#                 lastID = newReservation.id
+#
+#         def CheckJumpNumerationRestriction():
+#             rentalOBJ = models.rental.objects.filter(name = StandardDataSets.standardIntervalsFaithful[1]['objectDATA']['name']).first()
+#
+#             objectCreated = False
+#
+#             try:
+#                 newID1 = 100
+#                 newReservation1 = models.reservation.objects.create(id = newID1, rental = rentalOBJ, **StandardDataSets.standardIntervalsFaithful[1]['reservations'][0])
+#                 newID2 = 50
+#                 newReservation2 = models.reservation.objects.create(id = newID2, rental = rentalOBJ, **StandardDataSets.standardIntervalsFaithful[1]['reservations'][1])
+#                 objectCreated = True
+#             except Exception as e:
+#                 pass
+#
+#             self.assertEqual(objectCreated, False, msg='Violation sequential numbering')
+#
+#
+#         CheckSequentialNumeration()
+#         CheckJumpNumerationRestriction()
 
 class DB_Reservation_04_DataSamplesAccuracy(TestCase):
 
@@ -541,18 +541,18 @@ class DB_Reservation_04_DataSamplesAccuracy(TestCase):
         NotVerifiedElements = len(list(filter(lambda exam: exam['reservation_Examination_Checked'] == False, self.standardExaminationSample)))
         self.assertEqual(NotVerifiedElements, 0, msg=f'Incomplete request data')
 
-    def test_SampleReservationWithLast_model2(self):
-        datCheck = models.reservation.objects.all()
-
-        for curElement in datCheck:
-            resultFilter = list(filter(lambda exam: exam['reservation_Object'] == curElement, self.standardExaminationSample))
-            self.assertEqual(len(resultFilter), 1, msg='Extra data fetching')
-
-            findElement = resultFilter[0]
-            self.assertEqual(findElement['reservation_Examination_Checked'], False, msg=f'Data dublication')
-            self.assertEqual(findElement['reservation_Examination']['id_prev'], curElement.id_previos, msg=f'Incorrect data examinating')
-            self.standardExaminationSample[findElement['id_sample']-1]['reservation_Examination_Checked'] = True
-
-
-        NotVerifiedElements = len(list(filter(lambda exam: exam['reservation_Examination_Checked'] == False, self.standardExaminationSample)))
-        self.assertEqual(NotVerifiedElements, 0, msg=f'Incomplete request data')
+    # def test_SampleReservationWithLast_model2(self):
+    #     datCheck = models.reservation.objects.all()
+    #
+    #     for curElement in datCheck:
+    #         resultFilter = list(filter(lambda exam: exam['reservation_Object'] == curElement, self.standardExaminationSample))
+    #         self.assertEqual(len(resultFilter), 1, msg='Extra data fetching')
+    #
+    #         findElement = resultFilter[0]
+    #         self.assertEqual(findElement['reservation_Examination_Checked'], False, msg=f'Data dublication')
+    #         self.assertEqual(findElement['reservation_Examination']['id_prev'], curElement.id_previos, msg=f'Incorrect data examinating')
+    #         self.standardExaminationSample[findElement['id_sample']-1]['reservation_Examination_Checked'] = True
+    #
+    #
+    #     NotVerifiedElements = len(list(filter(lambda exam: exam['reservation_Examination_Checked'] == False, self.standardExaminationSample)))
+    #     self.assertEqual(NotVerifiedElements, 0, msg=f'Incomplete request data')
