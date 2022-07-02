@@ -1,7 +1,7 @@
 from django.db import models
 from django.dispatch import receiver
 from django.db.models.signals import pre_save
-from django.db.models import Q
+from django.db.models import Q, OuterRef, Subquery
 import datetime
 
 class rental(models.Model):
@@ -59,7 +59,14 @@ class rental(models.Model):
 class reservationManager(models.Manager):
 
     def selectReservationWithLast(self):
-        return self.raw('SELECT gr.id, Max(rp.id) as id_prev FROM core_reservation as gr left join core_reservation as rp on rp.id_rental = gr.id_rental and gr.id > rp.id group by gr.id')
+    # NEO: 02.07.22 22:36 (~002) [Change query to Django pattern]
+    # COMMENT: after the change, productivity decriced by 20%
+    # <CHANGE> <OLD>
+    #     return self.raw('SELECT gr.id, Max(rp.id) as id_prev FROM core_reservation as gr left join core_reservation as rp on rp.id_rental = gr.id_rental and gr.id > rp.id group by gr.id')
+    # </OLD> <NEW>
+        subQueryPrevious = reservation.objects.filter(rental_id=OuterRef('rental_id'), id__lt=OuterRef('id')).order_by('-checkin')
+        return reservation.objects.all().annotate(id_prev=Subquery(subQueryPrevious.values('id')[:1], output_field=models.BigIntegerField())).select_related('rental')
+    # </NEW> </CHANGE>
 
 class reservation(models.Model):
     # -------------------
@@ -100,6 +107,8 @@ class reservation(models.Model):
                 self._original_id = self.id
         pass
 
+    # NEO: 02.07.22 22:35 (~000.1) [models.hospitality.reservation.id_previos (property)]
+    # <CHANGE> <OLD>
     # @property
     # def id_previos(self):
     #     sample = reservation.objects.filter(rental=self.rental, id__lt=self.id).order_by('-id')[:1]
@@ -107,6 +116,7 @@ class reservation(models.Model):
     #         return None
     #     else:
     #         return sample[0].id
+    # </OLD> </CHANGE>
 
     def validateIntersection(self):
         if self._checkIntersectionExistence_root(self.rental, self.checkin, self.checkout, self) == True:

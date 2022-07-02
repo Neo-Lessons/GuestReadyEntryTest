@@ -7,7 +7,12 @@ import dotenv
 def main():
     """Run administrative tasks."""
     dotenv.read_dotenv()
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+    # NEO: 02.07.22 22:12 (~001) [separation of settings]
+    # <OLD>
+    # os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.settings')
+    # </OLD> <NEW>
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', os.getenv('SETTINGS', default='development_SQLITE'))
+    # </NEW> CHANGE
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:

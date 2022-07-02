@@ -2,7 +2,13 @@ from pathlib import Path
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+# NEO: 02.07.22 22:59 (~001) [separation of settings]
+# <CHANGE> <OLD>
+# BASE_DIR = Path(__file__).resolve().parent.parent
+# </OLD> <NEW>
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+# </NEW> </CHANGE>
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
@@ -11,9 +17,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = ['*']
+# NEO: 03.07.22 00:11 (~001) [separation of settings]
+# <CHANGE> <OLD>
+# DEBUG = True
+#
+# ALLOWED_HOSTS = ['*']
+# </OLD> </CHANGE>
 
 #############################################################################
 # Application definition
@@ -71,12 +80,15 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
+# NEO: 03.07.22 00:09 (~001) [separation of settings]
+# <CHANGE> <OLD>
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+# </OLD>
 
 
 # Password validation
