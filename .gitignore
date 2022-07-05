@@ -1,6 +1,9 @@
 /back_django_gr/venv/
 /back_django_gr/modules/core/migrations/
 /back_django_gr/.idea/
+/back_django_gr/.vscode/
 /back_django_gr/.env
 /back_django_gr/db.sqlite3
 /front_react_gr/node_modules/
+/front_react_gr/.vscode/
+/.idea/
