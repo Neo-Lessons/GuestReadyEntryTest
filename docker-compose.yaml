@@ -1,0 +1,43 @@
+version: "3.8"
+services:
+  back_django_gr:
+    depends_on:
+      - db_grET
+    container_name: back_django_gr
+    build: ./back_django_gr
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./back_django_gr/:/usr/src/app/
+    environment:
+      - SQL_DATABASE=hello_django_dev
+      - SQL_USER=hello_django
+      - SQL_PASSWORD=hello_django
+      - SQL_HOST=db_grET
+      - SQL_PORT=5432
+      - DATABASE=postgres
+    ports:
+      - 8000:8000
+
+  db_grET:
+    container_name: db_grET
+    image: postgres:13.0-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    ports:
+      - "5430:5432"
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_DB=db_grET
+
+  front_react_gr:
+    build:
+      context: ./front_react_gr/
+      dockerfile: ./deployment/Docker/Dockerfile
+    container_name: front_react_gr
+    ports:
+      - '3000:3000'
+    stdin_open: true
+
+volumes:
+    postgres_data:
